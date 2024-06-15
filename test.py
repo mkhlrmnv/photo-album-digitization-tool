@@ -1,73 +1,33 @@
-import os
 from PIL import Image
 import numpy as np
 
-import time
+def find_split_row(image, threshold=250):
+    """Find the row to split the image on, based on significant changes in whiteness."""
+    grayscale = image.convert("L")  # Convert image to grayscale
+    img_array = np.array(grayscale)  # Convert grayscale image to numpy array
 
+    # Calculate the absolute difference between the whiteness of adjacent rows
+    row_diffs = np.abs(np.diff(np.mean(img_array, axis=1)))
+    # Find the row with the maximum difference in whiteness
+    split_row = np.argmax(row_diffs)
 
-startTime = time.time()
+    return split_row
 
-# VARIABLES
-THRESHOLD = 200
-WHITES_IN_THE_ROW = 1000
+def split_image_horizontally(image_path, output_path1, output_path2):
+    """Split the image at the row with the most significant change in whiteness."""
+    image = Image.open(image_path)
+    split_row = find_split_row(image)
 
-list = os.listdir('input')
+    # Crop the image into top and bottom parts
+    top_image = image.crop((0, 0, image.width, split_row))
+    bottom_image = image.crop((0, split_row, image.width, image.height))
 
-image = Image.open('input/' + list[3])
-# image.show()
+    # Save the two new images
+    top_image.save(output_path1)
+    bottom_image.save(output_path2)
 
-image_array = np.array(image)
-# print(image_array[400])
-
-"""
-image_array[10:1000, 10:100, :] = [255, 0, 0]
-im = Image.fromarray(image_array)
-im.show()
-"""
-
-# Image.fromarray(image_array).show()
-
-"""
-for j in range(len(image_array[0])):
-    if np.all(image_array[0][j] > 240):
-        print(j)
-"""
-
-THRESHOLD = 200
-WHITES_IN_THE_ROW = 1500
-
-def getRows(array):
-    whiteCols = []
-    counter = 0
-    prev_was_white = False
-
-    for i in range(len(array)):
-        counter = 0
-        for j in range(len(array[0])):
-            if np.all(array[i][j] > THRESHOLD):
-                counter += 1
-        if counter > WHITES_IN_THE_ROW:
-            if prev_was_white or (i > 0 and i < len(array[0]) - 1 and np.all(array[j][i-1] > THRESHOLD) and np.all(array[j][i+1] > THRESHOLD)):
-                whiteCols.append(i)
-                prev_was_white = True
-            else:
-                prev_was_white = False
-        else:
-            prev_was_white = False
-
-    return whiteCols
-
-cols = getRows(image_array)
-
-def findJump(array):
-    for i in range(len(array)):
-        if (i + 1) != len(array) & (array[i] + 1) == array[i + 1] & i > 200:
-            return array[i + 1]
-        
-print(findJump(cols))
-        
-cropped1 = image.crop((0, 0, len(image_array[0]), findJump(cols)))
-cropped2 = image.crop((0, findJump(cols), len(image_array[0]), len(image_array)))
-
-cropped1.show()
-cropped2.show()
+# Example usage
+image_path = "input/Skannaus 3.jpeg"
+output_path1 = "output/top_image.jpeg"
+output_path2 = "output/bottom_image.jpg"
+split_image_horizontally(image_path, output_path1, output_path2)
