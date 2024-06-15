@@ -2,6 +2,10 @@ import os
 from PIL import Image
 import numpy as np
 
+import time
+
+startTime = time.time()
+
 # VARIABLES
 THRESHOLD = 230
 WHITES_IN_THE_ROW = 100
@@ -59,5 +63,9 @@ def dropCols(array, cols):
 
 newImg = dropCols(image_array, imgWithout)
 Image.fromarray(newImg).show()
+
+endTime = time.time()
+
+print("Execution time: ", endTime - startTime)
 
 
