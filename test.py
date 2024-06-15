@@ -10,8 +10,6 @@ startTime = time.time()
 THRESHOLD = 230
 WHITES_IN_THE_ROW = 100
 
-
-
 list = os.listdir('input')
 
 image = Image.open('input/' + list[3])
