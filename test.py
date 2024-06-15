@@ -4,6 +4,7 @@ import numpy as np
 
 import time
 
+
 startTime = time.time()
 
 # VARIABLES
@@ -13,7 +14,7 @@ WHITES_IN_THE_ROW = 1000
 list = os.listdir('input')
 
 image = Image.open('input/' + list[3])
-image.show()
+# image.show()
 
 image_array = np.array(image)
 # print(image_array[400])
@@ -32,29 +33,8 @@ for j in range(len(image_array[0])):
         print(j)
 """
 
-def getCols(array):
-    whiteCols = []
-    counter = 0
-
-    for i in range(len(array[0])):
-        print(counter)
-        counter = 0
-        for j in range(len(array)):
-            if np.all(array[j][i] > THRESHOLD):
-                counter += 1
-        if counter > WHITES_IN_THE_ROW:
-            if prev_was_white or (i > 0 and i < len(array[0]) - 1 and np.all(array[j][i-1] > THRESHOLD) and np.all(array[j][i+1] > THRESHOLD)):
-                whiteCols.append(i)
-                prev_was_white = True
-            else:
-                prev_was_white = False
-        else:
-            prev_was_white = False
-
-    return whiteCols
-
-def dropCols(array, cols):
-    return np.delete(array, cols, axis=1)
+THRESHOLD = 200
+WHITES_IN_THE_ROW = 1500
 
 def getRows(array):
     whiteCols = []
@@ -77,16 +57,17 @@ def getRows(array):
 
     return whiteCols
 
-def dropRows(array, rows):
-    return np.delete(array, rows, axis=0)
+cols = getRows(image_array)
 
-imgWithout = getRows(image_array)
-print(len(imgWithout))
+def findJump(array):
+    for i in range(len(array)):
+        if (i + 1) != len(array) & (array[i] + 1) == array[i + 1] & i > 200:
+            return array[i + 1]
+        
+print(findJump(cols))
+        
+cropped1 = image.crop((0, 0, len(image_array[0]), findJump(cols)))
+cropped2 = image.crop((0, findJump(cols), len(image_array[0]), len(image_array)))
 
-Image.fromarray(dropRows(image_array, imgWithout)).show()
-
-endTime = time.time()
-
-print("Execution time: ", endTime - startTime)
-
-
+cropped1.show()
+cropped2.show()
