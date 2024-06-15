@@ -2,42 +2,80 @@ import os
 from PIL import Image
 import numpy as np
 
-def trim_white_borders(image_path, output_folder):
-    image = Image.open(image_path)
-    image_array = np.array(image)
-    
-    # Check for fully white rows and columns
-    # non_white_rows = np.where(np.any(image_array < 250, axis=(1, 2)))[0]
-    # non_white_cols = np.where(np.any(image_array < 250, axis=(0, 2)))[0]
+# VARIABLES
+THRESHOLD = 230
+WHITES_IN_THE_ROW = 100
 
-    white_rows = np.where()
-    
-    # Determine the cropping box
-    if non_white_rows.size > 0 and non_white_cols.size > 0:
-        top, bottom = non_white_rows[0], non_white_rows[-1]
-        left, right = non_white_cols[0], non_white_cols[-1]
-        
-        # Crop the image
-        trimmed_image = image.crop((left, top, right + 1, bottom + 1))
-        
-        # Save the trimmed image
-        base_name = os.path.basename(image_path)
-        trimmed_image.save(os.path.join(output_folder, base_name))
-    else:
-        # If the image is completely white, save the original
-        image.save(os.path.join(output_folder, os.path.basename(image_path)))
+inputDir = 'input'
+outputDir = 'output'
 
-def process_folder(input_folder, output_folder):
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
-    
-    for filename in os.listdir(input_folder):
-        if filename.lower().endswith('.jpeg'):
-            image_path = os.path.join(input_folder, filename)
-            trim_white_borders(image_path, output_folder)
+def getCols(array):
+    whiteCols = []
+    counter = 0
+
+    for i in range(len(array[0])):
+        print(counter)
+        counter = 0
+        for j in range(len(array)):
+            if np.all(array[j][i] > THRESHOLD):
+                counter += 1
+        if counter > WHITES_IN_THE_ROW:
+            if prev_was_white or (i > 0 and i < len(array[0]) - 1 and np.all(array[j][i-1] > THRESHOLD) and np.all(array[j][i+1] > THRESHOLD)):
+                whiteCols.append(i)
+                prev_was_white = True
+            else:
+                prev_was_white = False
+        else:
+            prev_was_white = False
+
+    return whiteCols
+
+# TODO: TEST
+"""
+def getRows(array):
+    whiteCols = []
+    counter = 0
+    prev_was_white = False
+
+    for i in range(len(array)):
+        counter = 0
+        for j in range(len(array[0])):
+            if np.all(array[i][j] > THRESHOLD):
+                counter += 1
+        if counter > WHITES_IN_THE_ROW:
+            if prev_was_white or (i > 0 and i < len(array[0]) - 1 and np.all(array[j][i-1] > THRESHOLD) and np.all(array[j][i+1] > THRESHOLD)):
+                whiteCols.append(i)
+                prev_was_white = True
+            else:
+                prev_was_white = False
+        else:
+            prev_was_white = False
+
+    return whiteCols
+"""
+
+def dropCols(array, cols):
+    return np.delete(array, cols, axis=1)
+
+#TODO: TEST
+"""
+def dropRows(array, cols):
+    return np.delete(array, cols, axis=0)
+"""
+
+def processFolder():
+    if not os.path.exists(outputDir):
+        os.makedirs(outputDir)
+
+    for f in os.listdir(inputDir):
+        if f.lower().endswith('.jpeg'):
+            path = os.path.join(inputDir, f)
+            imgArr = np.array(Image.open(path))
+            cols = getCols(imgArr)
+            imgArr = dropCols(imgArr, cols)
+            Image.fromarray(imgArr).save(os.path.join(outputDir, f))
+
+
 
 if __name__ == "__main__":
-    input_folder = 'input'
-    output_folder = 'output'
-    
-    process_folder(input_folder, output_folder)
+    processFolder()
