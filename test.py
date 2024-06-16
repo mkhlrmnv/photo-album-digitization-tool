@@ -1,6 +1,11 @@
 from PIL import Image
 import numpy as np
 
+from trimmer import getCols
+
+# VARIABLES
+JUMP = 20
+
 def find_split_row(image, threshold=250):
     """Find the row to split the image on, based on significant changes in whiteness."""
     grayscale = image.convert("L")  # Convert image to grayscale
@@ -26,8 +31,38 @@ def split_image_horizontally(image_path, output_path1, output_path2):
     top_image.save(output_path1)
     bottom_image.save(output_path2)
 
+def split(array):
+    print(len(array))
+    print(len(array[0]))
+    whiteRows = getCols(array)
+    jump = 0
+
+    print(len(whiteRows))
+
+    for i in range(len(whiteRows)):
+        if i + 1 < len(whiteRows):
+            if whiteRows[i + 1] > (whiteRows[i] + JUMP): 
+                jump = whiteRows[i + 1]
+                break
+
+    img = Image.fromarray(array)
+
+    if jump > 0 and jump < img.height:
+        top = img.crop((0, 0, img.width, jump))
+        bottom = img.crop((0, jump, img.width, img.height))
+    else:
+        print(f"Invalid jump value: {jump}. Image height is {img.height}.")
+        top = img
+        bottom = None
+
+    if top and bottom:
+        top.show()
+        bottom.show()
+    else:
+        print("Cropping was not successful. Check the jump value.")
+
 # Example usage
 image_path = "input/Skannaus 3.jpeg"
 output_path1 = "output/top_image.jpeg"
 output_path2 = "output/bottom_image.jpg"
-split_image_horizontally(image_path, output_path1, output_path2)
+split(np.array(Image.open(image_path)))
