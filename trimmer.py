@@ -4,7 +4,7 @@ import numpy as np
 
 # VARIABLES
 THRESHOLD = 250
-WHITES_IN_THE_ROW = 1000
+WHITES_IN_THE_ROW = 900
 
 inputDir = 'input'
 outputDir = 'output'
@@ -55,8 +55,8 @@ def getRows(array):
 def dropCols(array, cols):
     return np.delete(array, cols, axis=1)
 
-def dropRows(array, cols):
-    return np.delete(array, cols, axis=0)
+def dropRows(array, rows):
+    return np.delete(array, rows, axis=0)
 
 def processFolder():
     if not os.path.exists(outputDir):
