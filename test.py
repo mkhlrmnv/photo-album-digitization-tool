@@ -1,68 +1,37 @@
-from PIL import Image
+import cv2
 import numpy as np
+import os
 
-from trimmer import getCols
+# Directory containing your scanned images
+input_dir = "input"
+output_dir = "output"
 
-# VARIABLES
-JUMP = 20
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
 
-def find_split_row(image, threshold=250):
-    """Find the row to split the image on, based on significant changes in whiteness."""
-    grayscale = image.convert("L")  # Convert image to grayscale
-    img_array = np.array(grayscale)  # Convert grayscale image to numpy array
+# Function to crop the image based on the two largest contours
+def crop_image(image_path, output_path_prefix):
+    # Read the image
+    image = cv2.imread(image_path)
+    # Convert to grayscale
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # Apply binary thresholding
+    _, thresh = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY_INV)
+    # Find contours
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # Sort contours by area (largest to smallest)
+    contours = sorted(contours, key=cv2.contourArea, reverse=True)
+    
+    # Process the two largest contours
+    for i, contour in enumerate(contours[:2]):
+        x, y, w, h = cv2.boundingRect(contour)
+        cropped_image = image[y:y+h, x:x+w]
+        output_path = f"{output_path_prefix}_{i+1}.jpg"
+        cv2.imwrite(output_path, cropped_image)
 
-    # Calculate the absolute difference between the whiteness of adjacent rows
-    row_diffs = np.abs(np.diff(np.mean(img_array, axis=1)))
-    # Find the row with the maximum difference in whiteness
-    split_row = np.argmax(row_diffs)
-
-    return split_row
-
-def split_image_horizontally(image_path, output_path1, output_path2):
-    """Split the image at the row with the most significant change in whiteness."""
-    image = Image.open(image_path)
-    split_row = find_split_row(image)
-
-    # Crop the image into top and bottom parts
-    top_image = image.crop((0, 0, image.width, split_row))
-    bottom_image = image.crop((0, split_row, image.width, image.height))
-
-    # Save the two new images
-    top_image.save(output_path1)
-    bottom_image.save(output_path2)
-
-def split(array):
-    print(len(array))
-    print(len(array[0]))
-    whiteRows = getCols(array)
-    jump = 0
-
-    print(len(whiteRows))
-
-    for i in range(len(whiteRows)):
-        if i + 1 < len(whiteRows):
-            if whiteRows[i + 1] > (whiteRows[i] + JUMP): 
-                jump = whiteRows[i + 1]
-                break
-
-    img = Image.fromarray(array)
-
-    if jump > 0 and jump < img.height:
-        top = img.crop((0, 0, img.width, jump))
-        bottom = img.crop((0, jump, img.width, img.height))
-    else:
-        print(f"Invalid jump value: {jump}. Image height is {img.height}.")
-        top = img
-        bottom = None
-
-    if top and bottom:
-        top.show()
-        bottom.show()
-    else:
-        print("Cropping was not successful. Check the jump value.")
-
-# Example usage
-image_path = "input/Skannaus 3.jpeg"
-output_path1 = "output/top_image.jpeg"
-output_path2 = "output/bottom_image.jpg"
-split(np.array(Image.open(image_path)))
+# Process all images in the directory
+for filename in os.listdir(input_dir):
+    if filename.endswith(".jpg") or filename.endswith(".jpeg"):
+        input_path = os.path.join(input_dir, filename)
+        output_path_prefix = os.path.join(output_dir, os.path.splitext(filename)[0])
+        crop_image(input_path, output_path_prefix)
