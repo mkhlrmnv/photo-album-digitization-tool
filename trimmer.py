@@ -3,8 +3,8 @@ from PIL import Image
 import numpy as np
 
 # VARIABLES
-THRESHOLD = 230
-WHITES_IN_THE_ROW = 100
+THRESHOLD = 250
+WHITES_IN_THE_ROW = 1000
 
 inputDir = 'input'
 outputDir = 'output'
@@ -12,9 +12,10 @@ outputDir = 'output'
 def getCols(array):
     whiteCols = []
     counter = 0
+    prev_was_white = False
 
     for i in range(len(array[0])):
-        print(counter)
+        # print(counter)
         counter = 0
         for j in range(len(array)):
             if np.all(array[j][i] > THRESHOLD):
@@ -30,8 +31,6 @@ def getCols(array):
 
     return whiteCols
 
-# TODO: TEST
-"""
 def getRows(array):
     whiteCols = []
     counter = 0
@@ -52,29 +51,28 @@ def getRows(array):
             prev_was_white = False
 
     return whiteCols
-"""
 
 def dropCols(array, cols):
     return np.delete(array, cols, axis=1)
 
-#TODO: TEST
-"""
 def dropRows(array, cols):
     return np.delete(array, cols, axis=0)
-"""
 
 def processFolder():
     if not os.path.exists(outputDir):
         os.makedirs(outputDir)
 
+    counter = 0
     for f in os.listdir(inputDir):
         if f.lower().endswith('.jpeg'):
+            counter += 1
             path = os.path.join(inputDir, f)
             imgArr = np.array(Image.open(path))
             cols = getCols(imgArr)
             imgArr = dropCols(imgArr, cols)
-            Image.fromarray(imgArr).save(os.path.join(outputDir, f))
-
+            imgArr = dropRows(imgArr, getRows(imgArr))
+            Image.fromarray(imgArr).rotate(90, expand=True).save(os.path.join(outputDir, f))
+            print(f"Done: {counter} / {len(os.listdir(inputDir))}")
 
 
 if __name__ == "__main__":
