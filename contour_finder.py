@@ -6,6 +6,8 @@ import os
 input_dir = "input"
 output_dir = "output"
 
+test_img = 'input/Skannaus 7.jpeg'
+
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
