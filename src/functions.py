@@ -90,19 +90,22 @@ def get_pictures(path):
     min_x = image.shape[0] // 4
     min_y = image.shape[1] // 4
 
+    max_x = image.shape[0] - min_x
+    max_y = image.shape[1] - min_y
+
     for i, contour in enumerate(contours):
         x, y, w, h = cv2.boundingRect(contour)
-        if w > min_x and h > min_y:
+        if (w > min_x and h > min_y) and w < max_x and h < max_y:
             result.append(image[y:y+h - 1, x:x+w - 1])
 
     return result
 
 # For debugging
-
-image_path = 'input/Skannaus 22.jpeg'
-cropped_images = get_pictures(image_path)
-for i, img in enumerate(cropped_images):
-    cv2.imshow(f"Cropped Image {i}", img)
-cv2.imshow("original", cv2.imread(image_path))
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+def debug():
+    image_path = 'input/Skannaus 22.jpeg'
+    cropped_images = get_pictures(image_path)
+    for i, img in enumerate(cropped_images):
+        cv2.imshow(f"Cropped Image {i}", img)
+    cv2.imshow("original", cv2.imread(image_path))
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
