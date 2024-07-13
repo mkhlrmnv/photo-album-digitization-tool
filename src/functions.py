@@ -1,7 +1,5 @@
 import cv2
 
-
-
 def remove_white(path):
     """
     Removes white background from an image.
@@ -32,12 +30,43 @@ def remove_white(path):
         return cropped_image
     else:
         return image
+    
+def crop_in_four_pieces(path):
+    """
+    Crops an image into four equal pieces.
 
+    Args:
+        path (str): The path to the image file.
+
+    Returns:
+        list: A list containing the four cropped image pieces.
+    """
+    # Opens the image
+    image = cv2.imread(path)
+
+    # Takes its dimensions and calculates what is half of them
+    width, height, _ = image.shape
+    half_width = width // 2  # two of // divides and floors the result
+    half_height = height // 2
+
+    result = []
+
+    for i in range(2):
+        for j in range(2):
+            left = i * half_width
+            top = j * half_height
+            right = (i + 1) * half_width
+            bottom = (j + 1) * half_height
+
+            result.append(image[top:bottom, left:right])
+
+    return result
 
 # For debugging
-image_path = 'input/page_2_picture_2.jpeg'
-cropped_image = remove_white(image_path)
-cv2.imshow("Cropped Image", cropped_image)
-cv2.imshow("original", cv2.imread(image_path))
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+def debug():
+    image_path = 'input/page_2_picture_2.jpeg'
+    cropped_image = remove_white(image_path)
+    cv2.imshow("Cropped Image", cropped_image)
+    cv2.imshow("original", cv2.imread(image_path))
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
