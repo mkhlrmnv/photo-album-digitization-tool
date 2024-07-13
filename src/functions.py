@@ -81,7 +81,7 @@ def get_pictures(path):
     gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     # Applies binary threshold and find picture contours from it
-    _, thresh = cv2.threshold(gray_img, 240, 255, cv2.THRESH_BINARY_INV)
+    _, thresh = cv2.threshold(gray_img, 200, 255, cv2.THRESH_BINARY_INV)
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     contours = sorted(contours, key=cv2.contourArea, reverse=True)
 
@@ -98,11 +98,11 @@ def get_pictures(path):
     return result
 
 # For debugging
-def debug():
-    image_path = 'input/Skannaus 24.jpeg'
-    cropped_images = get_pictures(image_path)
-    for i, img in enumerate(cropped_images):
-        cv2.imshow(f"Cropped Image {i}", img)
-    cv2.imshow("original", cv2.imread(image_path))
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+
+image_path = 'input/Skannaus 22.jpeg'
+cropped_images = get_pictures(image_path)
+for i, img in enumerate(cropped_images):
+    cv2.imshow(f"Cropped Image {i}", img)
+cv2.imshow("original", cv2.imread(image_path))
+cv2.waitKey(0)
+cv2.destroyAllWindows()
