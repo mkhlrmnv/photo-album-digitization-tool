@@ -62,11 +62,47 @@ def crop_in_four_pieces(path):
 
     return result
 
+def get_pictures(path):
+    """
+    Opens an image from the given path and converts it to grayscale.
+    Applies binary thresholding and finds contours in the image.
+    Filters the contours based on minimum width and height.
+    Returns a list of cropped images corresponding to the filtered contours.
+
+    Args:
+        path (str): The path to the image file.
+
+    Returns:
+        list: A list of cropped images.
+
+    """
+    # Opens picture from path and makes it gray scale
+    image = cv2.imread(path)
+    gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # Applies binary threshold and find picture contours from it
+    _, thresh = cv2.threshold(gray_img, 240, 255, cv2.THRESH_BINARY_INV)
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours = sorted(contours, key=cv2.contourArea, reverse=True)
+
+    result = []
+
+    min_x = image.shape[0] // 4
+    min_y = image.shape[1] // 4
+
+    for i, contour in enumerate(contours):
+        x, y, w, h = cv2.boundingRect(contour)
+        if w > min_x and h > min_y:
+            result.append(image[y:y+h - 1, x:x+w - 1])
+
+    return result
+
 # For debugging
 def debug():
-    image_path = 'input/page_2_picture_2.jpeg'
-    cropped_image = remove_white(image_path)
-    cv2.imshow("Cropped Image", cropped_image)
+    image_path = 'input/Skannaus 24.jpeg'
+    cropped_images = get_pictures(image_path)
+    for i, img in enumerate(cropped_images):
+        cv2.imshow(f"Cropped Image {i}", img)
     cv2.imshow("original", cv2.imread(image_path))
     cv2.waitKey(0)
     cv2.destroyAllWindows()
