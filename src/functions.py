@@ -27,13 +27,14 @@ def remove_white(path):
         largest_contour = max(contours, key=cv2.contourArea)
         x, y, w, h = cv2.boundingRect(largest_contour)
         # Crop the image
-        cropped_image = image[y:y+h, x:x+w]
+        # for some reason w and h is +1 from what it's need to be
+        cropped_image = image[y:y+h - 1, x:x+w - 1]
         return cropped_image
     else:
         return image
 
 
-# For debugging 
+# For debugging
 image_path = 'input/page_2_picture_2.jpeg'
 cropped_image = remove_white(image_path)
 cv2.imshow("Cropped Image", cropped_image)
