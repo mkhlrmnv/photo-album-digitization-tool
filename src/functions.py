@@ -49,8 +49,10 @@ def crop_in_four_pieces(path):
     half_width = width // 2  # two of // divides and floors the result
     half_height = height // 2
 
+    # empty array for returning contours
     result = []
 
+    # makes four new images and add each one to result list
     for i in range(2):
         for j in range(2):
             left = i * half_width
@@ -60,6 +62,7 @@ def crop_in_four_pieces(path):
 
             result.append(image[top:bottom, left:right])
 
+    # return four pictures that it goth
     return result
 
 def get_pictures(path):
@@ -85,19 +88,24 @@ def get_pictures(path):
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     contours = sorted(contours, key=cv2.contourArea, reverse=True)
 
+    # empty array for returning contours
     result = []
 
+    # calculating max and min values so too small or too big contours doesn't been
+    # added to result list
     min_x = image.shape[0] // 4
     min_y = image.shape[1] // 4
-
     max_x = image.shape[0] - min_x
     max_y = image.shape[1] - min_y
 
+    # going through all contours, and if they match size criterias, contour gets added
+    # into result list
     for i, contour in enumerate(contours):
         x, y, w, h = cv2.boundingRect(contour)
         if (w > min_x and h > min_y) and w < max_x and h < max_y:
             result.append(image[y:y+h - 1, x:x+w - 1])
 
+    # returning all contours that matched criterias
     return result
 
 # For debugging
