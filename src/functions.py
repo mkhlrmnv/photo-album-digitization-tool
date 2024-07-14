@@ -112,6 +112,15 @@ def get_pictures(path):
     return result
 
 def get_pictures_from_pdf(path):
+    """
+    Extracts pictures from a PDF file.
+
+    Args:
+        path (str): The path to the PDF file.
+
+    Returns:
+        list: A list of images extracted from the PDF file.
+    """
     # empty array for returning contours
     result = []
     for image in pdf2img(path):
