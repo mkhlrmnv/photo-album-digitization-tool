@@ -126,7 +126,7 @@ def get_pictures_from_pdf(path):
         grey = cv2.cvtColor(denoised, cv2.COLOR_BGR2GRAY)
 
         # Applies binary threshold and find picture contours from it
-        _, thresh = cv2.threshold(grey, 155, 255, cv2.THRESH_BINARY_INV)
+        _, thresh = cv2.threshold(grey, 145, 255, cv2.THRESH_BINARY_INV)
         contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         contours = sorted(contours, key=cv2.contourArea, reverse=True)
 
