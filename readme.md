@@ -21,6 +21,40 @@ Mainly this project relies on OpenCV library. The core of the project is divided
 - **Input**: Path to the image file.
 - **Output**: Cropped images based on the filtered contours.
 
+
+
+## Examples
+
+### 1. **Remove White Background**
+
+#### Original Photo
+<img src="test_pictures/readme_photos/remove_white_examples/original.jpeg" alt="Original" width="400"/>
+
+#### After `remove_white`
+<img src="test_pictures/readme_photos/remove_white_examples/result.jpeg" alt="Original" width="400"/>
+
+### 2. Crop Image in Four Equal Pieces
+
+#### Original Photo
+<img src="test_pictures/readme_photos/crop_in_four_examples/original.jpeg" alt="Original" height="400"/>
+
+#### After `crop_in_four_pieces`
+1. <img src="test_pictures/readme_photos/crop_in_four_examples/result_1.jpeg" alt="Original" height="400"/>
+2. <img src="test_pictures/readme_photos/crop_in_four_examples/result_2.jpeg" alt="Original" height="400"/>
+3. <img src="test_pictures/readme_photos/crop_in_four_examples/result_3.jpeg" alt="Original" height="400"/>
+4. <img src="test_pictures/readme_photos/crop_in_four_examples/result_4.jpeg" alt="Original" height="400"/>
+
+### 3. Get Pictures
+
+#### Original Photo
+<img src="test_pictures/readme_photos/get_pictures_examples/original.jpeg" alt="Original" height="400"/>
+
+#### After `get_pictures`
+1. <img src="test_pictures/readme_photos/get_pictures_examples/result_1.jpg" alt="result_1" height="400"/>
+2. <img src="test_pictures/readme_photos/get_pictures_examples/result_2.jpg" alt="result_2" height="400"/>
+
+
+
 ## Testing
 
 The file `test_functions.py` is used to test all the functions above, and ensure that they work as they should.
