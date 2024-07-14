@@ -1,4 +1,6 @@
 import cv2
+import pdf2image
+import numpy
 
 def remove_white(path):
     """
@@ -131,6 +133,22 @@ def flip_counter_clockwise(path):
         numpy.ndarray: The flipped image as a NumPy array.
     """
     return cv2.rotate(cv2.imread(path), cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+def pdf2img(path):
+    """
+    Convert a PDF file to a list of OpenCV images.
+
+    Args:
+        path (str): The path to the PDF file.
+
+    Returns:
+        list: A list of OpenCV images converted from the PDF pages.
+    """
+    images = pdf2image.convert_from_path(path, dpi=300)
+    list = []
+    for img in images:
+        list.append(cv2.cvtColor(numpy.array(img), cv2.COLOR_RGB2BGR))
+    return list
 
 # For debugging
 def debug():

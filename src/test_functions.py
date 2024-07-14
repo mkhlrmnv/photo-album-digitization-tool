@@ -80,5 +80,10 @@ class TestFunctions(unittest.TestCase):
 
         self.assertTrue(np.array_equal(result, expected_result))
 
+    def test_pdf2img(self):
+        result = pdf2img('test_pictures/test_pdf2img.pdf')
+        self.assertEqual(1, len(result))
+        self.assertEqual("<class 'numpy.ndarray'>", f"{type(result[0])}")
+
 if __name__ == '__main__':
     unittest.main()
