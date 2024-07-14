@@ -39,10 +39,7 @@ Mainly this project relies on OpenCV library. The core of the project is divided
 <img src="test_pictures/readme_photos/crop_in_four_examples/original.jpeg" alt="Original" height="400"/>
 
 #### After `crop_in_four_pieces`
-1. <img src="test_pictures/readme_photos/crop_in_four_examples/result_1.jpeg" alt="Original" height="400"/>
-2. <img src="test_pictures/readme_photos/crop_in_four_examples/result_2.jpeg" alt="Original" height="400"/>
-3. <img src="test_pictures/readme_photos/crop_in_four_examples/result_3.jpeg" alt="Original" height="400"/>
-4. <img src="test_pictures/readme_photos/crop_in_four_examples/result_4.jpeg" alt="Original" height="400"/>
+<img src="test_pictures/readme_photos/crop_in_four_examples/result_1.jpeg" alt="Original" height="400"/> 2. <img src="test_pictures/readme_photos/crop_in_four_examples/result_2.jpeg" alt="Original" height="400"/> 3. <img src="test_pictures/readme_photos/crop_in_four_examples/result_3.jpeg" alt="Original" height="400"/> 4. <img src="test_pictures/readme_photos/crop_in_four_examples/result_4.jpeg" alt="Original" height="400"/>
 
 ### 3. Get Pictures
 
@@ -50,8 +47,7 @@ Mainly this project relies on OpenCV library. The core of the project is divided
 <img src="test_pictures/readme_photos/get_pictures_examples/original.jpeg" alt="Original" height="400"/>
 
 #### After `get_pictures`
-1. <img src="test_pictures/readme_photos/get_pictures_examples/result_1.jpg" alt="result_1" height="400"/>
-2. <img src="test_pictures/readme_photos/get_pictures_examples/result_2.jpg" alt="result_2" height="400"/>
+1. <img src="test_pictures/readme_photos/get_pictures_examples/result_1.jpg" alt="result_1" height="400"/> 2. <img src="test_pictures/readme_photos/get_pictures_examples/result_2.jpg" alt="result_2" height="400"/>
 
 
 
