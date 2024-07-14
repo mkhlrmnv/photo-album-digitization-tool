@@ -63,6 +63,16 @@ class TestFunctions(unittest.TestCase):
                 path = os.path.join('test_pictures/test_get_pictures', f)
                 self.assertEqual(2, len(get_pictures(path)))
 
+    def test_get_pictures_from_pdf(self):
+        for f in os.listdir('test_pictures/test_get_pictures_from_pdf'):
+            if f.endswith('.pdf'):
+                path = os.path.join('test_pictures/test_get_pictures_from_pdf', f)
+                res = get_pictures_from_pdf(path)
+                for i, j in enumerate(res):
+                    cv2.imshow(f"{f} {i}", j)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
     def test_flip_counter_clockwise(self):
         # Call the flip_counter_clockwise function
         result = flip_counter_clockwise('test_pictures/test_flip/test_flip_original.png')
