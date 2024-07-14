@@ -108,6 +108,30 @@ def get_pictures(path):
     # returning all contours that matched criterias
     return result
 
+def flip_clockwise(path):
+    """
+    Flips an image clockwise by 90 degrees.
+
+    Args:
+        path (str): The path to the image file.
+
+    Returns:
+        numpy.ndarray: The flipped image as a NumPy array.
+    """
+    return cv2.rotate(cv2.imread(path), cv2.ROTATE_90_CLOCKWISE)
+
+def flip_counter_clockwise(path):
+    """
+    Flips the image counter-clockwise by 90 degrees.
+
+    Args:
+        path (str): The path to the image file.
+
+    Returns:
+        numpy.ndarray: The flipped image as a NumPy array.
+    """
+    return cv2.rotate(cv2.imread(path), cv2.ROTATE_90_COUNTERCLOCKWISE)
+
 # For debugging
 def debug():
     image_path = 'input/Skannaus 22.jpeg'

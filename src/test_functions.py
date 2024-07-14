@@ -60,8 +60,25 @@ class TestFunctions(unittest.TestCase):
     def test_get_picture(self):
         for f in os.listdir('test_pictures/test_get_pictures'):
             if f.endswith(".jpg") or f.endswith(".jpeg"):
-                path = os.path.join('input', f)
+                path = os.path.join('test_pictures/test_get_pictures', f)
                 self.assertEqual(2, len(get_pictures(path)))
+
+    def test_flip_counter_clockwise(self):
+        # Call the flip_counter_clockwise function
+        result = flip_counter_clockwise('test_pictures/test_flip/test_flip_original.png')
+        
+        # Assert that the result is the counter-clockwise flipped image
+        expected_result = cv2.imread('test_pictures/test_flip/test_flip_counter_clockwise.png')
+        self.assertTrue(np.array_equal(result, expected_result))
+
+    def test_flip_clockwise(self):
+        # Call the flip_clockwise function
+        result = flip_clockwise('test_pictures/test_flip/test_flip_original.png')
+
+        # Assert that the result is the counter-clockwise flipped image
+        expected_result = cv2.imread('test_pictures/test_flip/test_flip_clockwise.png')
+
+        self.assertTrue(np.array_equal(result, expected_result))
 
 if __name__ == '__main__':
     unittest.main()
