@@ -31,8 +31,6 @@ def extract_pictures_from_page(page_image_path, output_dir):
             cv2.imwrite(f"{output_dir}/picture_{picture_count}.jpg", picture)
             picture_count += 1
 
-import cv2
-
 def draw_contours_on_picture(page_image_path):
     image = cv2.imread(page_image_path)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
