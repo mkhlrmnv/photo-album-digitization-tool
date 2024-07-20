@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 import unittest
 import os
-from functions import *
+from functions import ImageProcessing as im
 
 class TestFunctions(unittest.TestCase):
     def test_remove_white_with_contour(self):
@@ -15,7 +15,7 @@ class TestFunctions(unittest.TestCase):
         temp_file = 'test_pictures/test_remove_with_contours.png'
 
         # Call the remove_white function
-        result = remove_white(temp_file)
+        result = im.remove_white(temp_file)
 
         # Assert that the result is the cropped image without the white background
         expected_result = image[20:80, 20:80]
@@ -31,7 +31,7 @@ class TestFunctions(unittest.TestCase):
         temp_file = 'test_pictures/test_remove_white_without_contours.png'
 
         # Call the remove_white function
-        result = remove_white(temp_file)
+        result = im.remove_white(temp_file)
 
         # Assert that the result is the original image
         self.assertTrue(np.array_equal(result, image))
@@ -44,10 +44,8 @@ class TestFunctions(unittest.TestCase):
         cv2.rectangle(image, (0, 50), (50, 100), (255, 0, 0), -1)
         cv2.rectangle(image, (50, 50), (100, 100), (0, 255, 0), -1)
 
-        temp_file = 'test_pictures/test_crop_in_four.png'
-
         # Call the crop_in_four_pieces function
-        result = crop_in_four_pieces('test_pictures/test_crop_in_four.png')
+        result = im.crop_in_four_pieces('test_pictures/test_crop_in_four.png')
 
         # Assert that the result is a list containing four cropped image pieces
         self.assertEqual(len(result), 4)
@@ -61,16 +59,16 @@ class TestFunctions(unittest.TestCase):
         for f in os.listdir('test_pictures/test_get_pictures'):
             if f.endswith(".jpg") or f.endswith(".jpeg"):
                 path = os.path.join('test_pictures/test_get_pictures', f)
-                self.assertEqual(2, len(get_pictures(path)))
+                self.assertEqual(2, len(im.get_pictures(path)))
 
     def test_get_pictures_from_pdf(self):
-        self.assertEqual(5, len(get_pictures_from_pdf("test_pictures/test_get_pictures_from_pdf/test_1.pdf")))
-        self.assertEqual(1, len(get_pictures_from_pdf("test_pictures/test_get_pictures_from_pdf/test_2.pdf")))
+        self.assertEqual(5, len(im.get_pictures_from_pdf("test_pictures/test_get_pictures_from_pdf/test_1.pdf")))
+        self.assertEqual(1, len(im.get_pictures_from_pdf("test_pictures/test_get_pictures_from_pdf/test_2.pdf")))
 
 
     def test_flip_counter_clockwise(self):
         # Call the flip_counter_clockwise function
-        result = flip_counter_clockwise('test_pictures/test_flip/test_flip_original.png')
+        result = im.flip_counter_clockwise('test_pictures/test_flip/test_flip_original.png')
         
         # Assert that the result is the counter-clockwise flipped image
         expected_result = cv2.imread('test_pictures/test_flip/test_flip_counter_clockwise.png')
@@ -78,7 +76,7 @@ class TestFunctions(unittest.TestCase):
 
     def test_flip_clockwise(self):
         # Call the flip_clockwise function
-        result = flip_clockwise('test_pictures/test_flip/test_flip_original.png')
+        result = im.flip_clockwise('test_pictures/test_flip/test_flip_original.png')
 
         # Assert that the result is the counter-clockwise flipped image
         expected_result = cv2.imread('test_pictures/test_flip/test_flip_clockwise.png')
@@ -86,7 +84,7 @@ class TestFunctions(unittest.TestCase):
         self.assertTrue(np.array_equal(result, expected_result))
 
     def test_pdf2img(self):
-        result = pdf2img('test_pictures/test_get_pictures_from_pdf/test_2.pdf')
+        result = im.pdf2img('test_pictures/test_get_pictures_from_pdf/test_2.pdf')
         self.assertEqual(1, len(result))
         self.assertEqual("<class 'numpy.ndarray'>", f"{type(result[0])}")
 
