@@ -64,14 +64,11 @@ class TestFunctions(unittest.TestCase):
                 self.assertEqual(2, len(get_pictures(path)))
 
     def test_get_pictures_from_pdf(self):
-        for f in os.listdir('test_pictures/test_get_pictures_from_pdf'):
-            if f.endswith('.pdf'):
-                path = os.path.join('test_pictures/test_get_pictures_from_pdf', f)
-                res = get_pictures_from_pdf(path)
-                for i, j in enumerate(res):
-                    cv2.imshow(f"{f} {i}", j)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        res = get_pictures_from_pdf("test_pictures/test_get_pictures_from_pdf/test_1.pdf")
+
+        self.assertEqual(5, len(get_pictures_from_pdf("test_pictures/test_get_pictures_from_pdf/test_1.pdf")))
+        self.assertEqual(1, len(get_pictures_from_pdf("test_pictures/test_get_pictures_from_pdf/test_2.pdf")))
+
 
     def test_flip_counter_clockwise(self):
         # Call the flip_counter_clockwise function
@@ -91,7 +88,7 @@ class TestFunctions(unittest.TestCase):
         self.assertTrue(np.array_equal(result, expected_result))
 
     def test_pdf2img(self):
-        result = pdf2img('test_pictures/test_pdf2img.pdf')
+        result = pdf2img('test_pictures/test_get_pictures_from_pdf/test_2.pdf')
         self.assertEqual(1, len(result))
         self.assertEqual("<class 'numpy.ndarray'>", f"{type(result[0])}")
 
