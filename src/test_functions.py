@@ -11,11 +11,8 @@ class TestFunctions(unittest.TestCase):
         image.fill(255)
         cv2.rectangle(image, (20, 20), (80, 80), (0, 0, 0), -1)
 
-        # Save the test image to a temporary file
-        temp_file = 'test_pictures/test_remove_with_contours.png'
-
         # Call the remove_white function
-        result = im.remove_white(temp_file)
+        result = im.remove_white('test_pictures/test_remove_with_contours.png')
 
         # Assert that the result is the cropped image without the white background
         expected_result = image[20:80, 20:80]
@@ -27,11 +24,8 @@ class TestFunctions(unittest.TestCase):
         image = np.zeros((100, 100, 3), dtype=np.uint8)
         image.fill(255)
 
-        # Save the test image to a temporary file
-        temp_file = 'test_pictures/test_remove_white_without_contours.png'
-
         # Call the remove_white function
-        result = im.remove_white(temp_file)
+        result = im.remove_white('test_pictures/test_remove_white_without_contours.png')
 
         # Assert that the result is the original image
         self.assertTrue(np.array_equal(result, image))
