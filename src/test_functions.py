@@ -64,8 +64,6 @@ class TestFunctions(unittest.TestCase):
                 self.assertEqual(2, len(get_pictures(path)))
 
     def test_get_pictures_from_pdf(self):
-        res = get_pictures_from_pdf("test_pictures/test_get_pictures_from_pdf/test_1.pdf")
-
         self.assertEqual(5, len(get_pictures_from_pdf("test_pictures/test_get_pictures_from_pdf/test_1.pdf")))
         self.assertEqual(1, len(get_pictures_from_pdf("test_pictures/test_get_pictures_from_pdf/test_2.pdf")))
 
