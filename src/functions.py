@@ -133,10 +133,10 @@ def get_pictures_from_pdf(path):
 
         denoised = cv2.fastNlMeansDenoisingColored(image)
         grey = cv2.cvtColor(denoised, cv2.COLOR_BGR2GRAY)
-        blurred = cv2.GaussianBlur(grey, (5, 5), 0)
+        # blurred = cv2.GaussianBlur(grey, (5, 5), 0)
 
         # Applies binary threshold and find picture contours from it
-        thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        thresh = cv2.adaptiveThreshold(grey, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                        cv2.THRESH_BINARY_INV, 11, 2)
 
         contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
