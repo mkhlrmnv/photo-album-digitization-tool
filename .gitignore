@@ -206,3 +206,5 @@ Temporary Items
 # ignore picture foldes
 input/
 output/
+
+*.pt
