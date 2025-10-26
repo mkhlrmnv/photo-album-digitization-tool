@@ -86,11 +86,58 @@ def rotate_rect_corners(w, h, angle_deg):
     rh = int(math.ceil(max(p[1] for p in poly_rot)))
     return poly_rot, rw, rh
 
+import numpy as np
+from PIL import ImageFilter
+
+def apply_vintage(im: Image.Image, strength=0.5, grain_std=4.0, fade=0.08, vignette=0.25):
+    """Vintage/yellow tone + slight fade, grain, vignette. Strength in [0,1]."""
+    a = np.asarray(im).astype(np.float32)
+
+    # tone curve: slight fade (lift blacks, compress highs)
+    if fade > 0:
+        a = a*(1.0 - fade) + 255.0*fade*0.1  # lift shadows a bit
+
+    # desaturate slightly
+    gray = (0.299*a[...,0] + 0.587*a[...,1] + 0.114*a[...,2])[...,None]
+    a = a*(1.0 - 0.25*strength) + gray*(0.25*strength)
+
+    # yellow/sepia cast via channel scaling + matrix
+    # base sepia matrix then interpolate with original
+    M = np.array([[0.393, 0.769, 0.189],
+                  [0.349, 0.686, 0.168],
+                  [0.272, 0.534, 0.131]], dtype=np.float32)
+    sep = np.tensordot(a, M.T, axes=1)
+    # bias toward yellow (boost R,G a little)
+    sep[...,0] *= (1.0 + 0.35*strength)
+    sep[...,1] *= (1.0 + 0.15*strength)
+    sep[...,2] *= (1.0 - 0.10*strength)
+    a = a*(1.0 - strength) + sep*strength
+
+    # film grain
+    if grain_std > 0:
+        noise = np.random.normal(0.0, grain_std, a.shape).astype(np.float32)
+        a = a + noise
+
+    # soft vignette
+    if vignette > 0:
+        h, w = a.shape[:2]
+        y, x = np.ogrid[:h, :w]
+        cx, cy = (w-1)/2.0, (h-1)/2.0
+        rx, ry = w/2.0, h/2.0
+        mask = ((x-cx)**2/(rx**2) + (y-cy)**2/(ry**2))
+        mask = np.clip(mask, 0, 1)
+        vig = 1.0 - vignette*mask.astype(np.float32)
+        a = a * vig[...,None]
+
+    a = np.clip(a, 0, 255).astype(np.uint8)
+    out = Image.fromarray(a).filter(ImageFilter.GaussianBlur(radius=0.3*strength))
+    return out
+
 # ---------------- core ----------------
 
 def synth_one(canvas_W, canvas_H, pool_paths, min_per, max_per,
               max_overlap_iou, scale_min, scale_max, border_px,
-              rot_min_deg, rot_max_deg):
+              rot_min_deg, rot_max_deg, args):
     # white canvas
     canvas = Image.new("RGB", (canvas_W, canvas_H), (255, 255, 255))
     placed_aabbs = []      # for simple IoU overlap checks (AABB of rotated image)
@@ -120,6 +167,16 @@ def synth_one(canvas_W, canvas_H, pool_paths, min_per, max_per,
         tw = max(1, int(round(w * scale)))
         th = max(1, int(round(h * scale)))
         img_resized = img.resize((tw, th), resample=Image.BICUBIC)
+
+        if random.random() < args.vintage_p:
+            strength = random.uniform(args.vintage_min, args.vintage_max)
+            img_resized = apply_vintage(
+                img_resized,
+                strength=strength,
+                grain_std=args.grain,
+                fade=args.fade,
+                vignette=args.vignette
+            )
 
         # random rotation
         angle = random.uniform(rot_min_deg, rot_max_deg)
@@ -187,6 +244,12 @@ def main():
     ap.add_argument("--rot-min", type=float, default=-15.0, help="Min rotation degrees")
     ap.add_argument("--rot-max", type=float, default=15.0, help="Max rotation degrees")
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--vintage-p", type=float, default=1.00, help="Chance to tint a photo vintage")
+    ap.add_argument("--vintage-min", type=float, default=0.5, help="Min strength")
+    ap.add_argument("--vintage-max", type=float, default=1.00, help="Max strength")
+    ap.add_argument("--grain", type=float, default=4.0, help="Grain stddev in 0..255 space")
+    ap.add_argument("--fade", type=float, default=0.08, help="Fade amount 0..1")
+    ap.add_argument("--vignette", type=float, default=0.25, help="Vignette strength 0..1")
     ap.add_argument("--cvat-ready", action="store_true",
                     help="Create CVAT-style layout and YAML; write train.txt; use images/train and labels/train")
     args = ap.parse_args()
@@ -214,7 +277,7 @@ def main():
         img, lbls = synth_one(
             W, H, srcs, args.min_per, args.max_per,
             args.max_iou, args.scale_min, args.scale_max, args.border,
-            args.rot_min, args.rot_max
+            args.rot_min, args.rot_max, args
         )
         stem = f"{i:06d}"
         img_path = img_dir / f"{stem}.jpg"
