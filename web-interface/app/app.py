@@ -223,17 +223,6 @@ def index() -> rx.Component:
     logging.info("Rendering index page.")
     return rx.el.main(
         rx.el.div(
-            rx.el.header(
-                rx.el.div(
-                    rx.icon("box-select", class_name="w-8 h-8 text-blue-600"),
-                    rx.el.h1(
-                        "YOLO Object Detection",
-                        class_name="text-2xl font-bold text-gray-900 tracking-tighter",
-                    ),
-                    class_name="flex items-center gap-3",
-                ),
-                class_name="w-full p-4 border-b border-gray-200 bg-white/80 backdrop-blur-lg fixed top-0 z-10",
-            ),
             rx.el.div(
                 rx.el.h2(
                     "Upload Your Image Archive",
