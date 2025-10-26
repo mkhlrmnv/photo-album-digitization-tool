@@ -86,6 +86,22 @@ def rotate_rect_corners(w, h, angle_deg):
     rh = int(math.ceil(max(p[1] for p in poly_rot)))
     return poly_rot, rw, rh
 
+def rotated_rect_polygon(w, h, angle_deg):
+    """4 corners of a w×h rectangle rotated by angle_deg (Pillow CCW), 
+    translated so min corner is at (0,0)."""
+    cx, cy = w / 2.0, h / 2.0
+    rad = math.radians(-angle_deg)  # flip sign to match PIL.rotate
+    cosA, sinA = math.cos(rad), math.sin(rad)
+    corners = [(0, 0), (w, 0), (w, h), (0, h)]
+    rot = []
+    for x, y in corners:
+        dx, dy = x - cx, y - cy
+        rx = cx + dx * cosA - dy * sinA
+        ry = cy + dx * sinA + dy * cosA
+        rot.append((rx, ry))
+    minx = min(p[0] for p in rot); miny = min(p[1] for p in rot)
+    return [(x - minx, y - miny) for x, y in rot]
+
 import numpy as np
 from PIL import ImageFilter
 
@@ -138,75 +154,84 @@ def apply_vintage(im: Image.Image, strength=0.5, grain_std=4.0, fade=0.08, vigne
 def synth_one(canvas_W, canvas_H, pool_paths, min_per, max_per,
               max_overlap_iou, scale_min, scale_max, border_px,
               rot_min_deg, rot_max_deg, args):
-    # white canvas
-    canvas = Image.new("RGB", (canvas_W, canvas_H), (255, 255, 255))
-    placed_aabbs = []      # for simple IoU overlap checks (AABB of rotated image)
-    labels = []            # YOLO-Seg 4-pt polygons
+    # transparent canvas + occupancy mask
+    canvas = Image.new("RGBA", (canvas_W, canvas_H), (255, 255, 255, 255))
+    occupancy = np.zeros((canvas_H, canvas_W), dtype=bool)
+    placed_aabbs = []
+    labels = []
 
     n = random.randint(min_per, max_per)
     tries = 0
-    max_tries = n * 50
+    max_tries = n * 80
 
     while len(placed_aabbs) < n and tries < max_tries:
         tries += 1
         src_path = random.choice(pool_paths)
         img = Image.open(src_path).convert("RGB")
 
-        # optional white border to mimic physical photo
         if border_px > 0:
             img = ImageOps.expand(img, border=border_px, fill=(255, 255, 255))
 
-        # random target width relative to canvas width
+        # scale
         s = random.uniform(scale_min, scale_max)
         tgt_w = int(canvas_W * s)
-
         w, h = img.size
         if w == 0 or h == 0 or tgt_w < 1:
             continue
         scale = tgt_w / w
-        tw = max(1, int(round(w * scale)))
-        th = max(1, int(round(h * scale)))
+        tw, th = max(1, int(round(w*scale))), max(1, int(round(h*scale)))
         img_resized = img.resize((tw, th), resample=Image.BICUBIC)
 
+        # vintage (optional)
         if random.random() < args.vintage_p:
             strength = random.uniform(args.vintage_min, args.vintage_max)
-            img_resized = apply_vintage(
-                img_resized,
-                strength=strength,
-                grain_std=args.grain,
-                fade=args.fade,
-                vignette=args.vignette
-            )
+            img_resized = apply_vintage(img_resized, strength, args.grain, args.fade, args.vignette)
 
-        # random rotation
+        # convert to RGBA with solid alpha
+        inst = img_resized.convert("RGBA")
+
+        # rotate with TRANSPARENT fill (no white corners)
         angle = random.uniform(rot_min_deg, rot_max_deg)
-        # compute rotated rectangle polygon and rotated image size
-        poly_rot, rw, rh = rotate_rect_corners(tw, th, -angle)
-        # make visual rotated image for pasting
-        img_rot = img_resized.rotate(angle, expand=True, fillcolor=(255, 255, 255))
-
+        poly_rot = rotated_rect_polygon(tw, th, angle)            # polygon in rotated-local coords
+        img_rot = img_resized.convert("RGBA").rotate(              # keep transparent corners
+            angle, expand=True, fillcolor=(0, 0, 0, 0)
+        )
+        rw, rh = img_rot.size                                      # authoritative size from PIL
         if rw >= canvas_W or rh >= canvas_H:
             continue
+        alpha = (np.array(img_rot.split()[-1]) > 0)                # (rh, rw) mask
 
-        # random placement on canvas
-        x0 = random.randint(0, canvas_W - rw)
-        y0 = random.randint(0, canvas_H - rh)
-        x1 = x0 + rw
-        y1 = y0 + rh
-        aabb = (x0, y0, x1, y1)
+        # try placements with alpha-overlap check
+        placed = False
+        for _ in range(40):
+            x0 = random.randint(0, canvas_W - rw)
+            y0 = random.randint(0, canvas_H - rh)
+            x1, y1 = x0 + rw, y0 + rh
 
-        if too_overlapping(aabb, placed_aabbs, max_overlap_iou):
+            # alpha mask of rotated instance
+            alpha = np.array(img_rot.split()[-1]) > 0  # (rh, rw) bool
+
+            # overlap ratio vs existing occupancy
+            overlap = (occupancy[y0:y1, x0:x1] & alpha).sum()
+            union = alpha.sum() + occupancy[y0:y1, x0:x1].sum() - overlap
+            iou = (overlap / union) if union > 0 else 0.0
+            if iou > max_overlap_iou or overlap > 0:  # forbid any pixel clash, or relax by iou
+                continue
+
+            # paste with alpha (no cutting)
+            canvas.alpha_composite(img_rot, (x0, y0))                  # no white cutting
+            occupancy[y0:y1, x0:x1] |= alpha
+            poly_canvas = [(x + x0, y + y0) for (x, y) in poly_rot]
+            labels.append(yolo_poly_line(poly_canvas, canvas_W, canvas_H, cls=0))
+            placed_aabbs.append((x0, y0, x1, y1))
+            placed = True
+            break
+
+        if not placed:
             continue
 
-        # paste and record
-        canvas.paste(img_rot, (x0, y0))
-
-        # polygon in canvas coordinates (translate by placement)
-        poly_canvas = [(x + x0, y + y0) for (x, y) in poly_rot]
-        labels.append(yolo_poly_line(poly_canvas, canvas_W, canvas_H, cls=0))
-        placed_aabbs.append(aabb)
-
-    return canvas, labels
+    # return RGB for saving
+    return canvas.convert("RGB"), labels
 
 def write_dataset_yaml_standard(out_dir: Path, name="album_rect", names=None):
     if names is None:
@@ -279,7 +304,9 @@ def main():
             args.max_iou, args.scale_min, args.scale_max, args.border,
             args.rot_min, args.rot_max, args
         )
-        stem = f"{i:06d}"
+
+        import uuid 
+        stem = uuid.uuid4().hex[:12]
         img_path = img_dir / f"{stem}.jpg"
         lbl_path = lbl_dir / f"{stem}.txt"
 
