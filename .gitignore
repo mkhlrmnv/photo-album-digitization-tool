@@ -208,3 +208,14 @@ input/
 output/
 
 *.pt
+*.pth
+
+*.jpeg
+*.jpg
+*.txt
+*.yaml
+
+
+# Datasets
+test-dataset-for-segmentation/
+2000-matka-dataset/
