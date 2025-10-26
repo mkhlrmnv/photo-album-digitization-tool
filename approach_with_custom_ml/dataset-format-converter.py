@@ -260,12 +260,12 @@ def main():
                         help='Conversion mode: cvat2yolo or yolo2cvat')
     parser.add_argument('--source', type=str, required=True,
                         help='Source dataset path')
-    parser.add_argument('--target', type=str, required=True,
+    parser.add_argument('--output', type=str, required=True,
                         help='Target dataset path')
     
     args = parser.parse_args()
     
-    converter = DatasetConverter(args.source, args.target)
+    converter = DatasetConverter(args.source, args.output)
     
     if args.mode == 'cvat2yolo':
         converter.cvat_to_yolo()
