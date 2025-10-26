@@ -216,8 +216,5 @@ output/
 *.csv
 *.txt
 *.yaml
-
-
-# Datasets
-test-dataset-for-segmentation/
-2000-matka-dataset/
+*.cache
+*.zip
