@@ -212,6 +212,8 @@ output/
 
 *.jpeg
 *.jpg
+*.png
+*.csv
 *.txt
 *.yaml
 
