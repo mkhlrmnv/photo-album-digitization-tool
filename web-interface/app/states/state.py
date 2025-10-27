@@ -19,6 +19,8 @@ logging.basicConfig(
     handlers=[logging.StreamHandler()]  # Log to console
 )
 
+YOLO_MODEL = '../approach_with_custom_ml/training-runs/combination-with-synthetic-v2/epoch80.pt'
+
 
 class State(rx.State):
     """The app state."""
@@ -148,7 +150,7 @@ class State(rx.State):
         self.total_objects_detected = 0
         yield
         try:
-            model = YOLO("yolov8n.pt")
+            model = YOLO(YOLO_MODEL)
             logging.info("YOLO model loaded successfully.")
         except NameError:
             logging.error("YOLO model could not be loaded.")
@@ -169,14 +171,32 @@ class State(rx.State):
                     logging.info(f"Processing image {i + 1}/{total_images}: {image_name}")
                     self.processing_progress = int((i + 1) / total_images * 100)
                     pil_image = Image.open(io.BytesIO(image_data)).convert("RGB")
+                    img_width, img_height = pil_image.size
+
+                    # Run YOLO model on the image
                     results = model(pil_image, verbose=False)
-                    annotated_image = results[0].plot()
-                    annotated_image_pil = Image.fromarray(
-                        cv2.cvtColor(annotated_image, cv2.COLOR_BGR2RGB)
-                    )
+
+                    # Create a new image to draw rectangles
+                    annotated_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+
+                    for result in results:
+                        for mask in result.masks.xy:
+                            # Calculate the bounding box of the mask
+                            x_coords = [x for x, y in mask]
+                            y_coords = [y for x, y in mask]
+                            x_min, x_max = int(min(x_coords)), int(max(x_coords))
+                            y_min, y_max = int(min(y_coords)), int(max(y_coords))
+
+                            # Draw the rectangle on the image
+                            cv2.rectangle(annotated_image, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
+
+                    # Convert the annotated image back to PIL format
+                    annotated_image_pil = Image.fromarray(cv2.cvtColor(annotated_image, cv2.COLOR_BGR2RGB))
                     img_byte_arr = io.BytesIO()
                     annotated_image_pil.save(img_byte_arr, format="JPEG")
                     processed_image_bytes = img_byte_arr.getvalue()
+
+                    # Save the processed image
                     processed_filename = f"processed_{image_name}"
                     processed_filepath = upload_dir / processed_filename
                     with open(processed_filepath, "wb") as f:
