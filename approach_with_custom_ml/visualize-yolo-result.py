@@ -69,6 +69,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    model = 'training-runs/combination-with-synthetic/segment/photo_segmentation/weights/best.pt'
+    model = 'training-runs/combination-with-synthetic-v2/epoch80.pt'
 
-    visualize_yolo_results(model, args.input, draw_rect=args.rext)
+    visualize_yolo_results(model, args.input, draw_rect=args.rect)
