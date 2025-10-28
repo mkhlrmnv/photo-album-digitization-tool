@@ -193,15 +193,25 @@ class State(rx.State):
                     annotated_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
 
                     for result in results:
-                        for mask in result.masks.xy:
-                            # Calculate the bounding box of the mask
-                            x_coords = [x for x, y in mask]
-                            y_coords = [y for x, y in mask]
-                            x_min, x_max = int(min(x_coords)), int(max(x_coords))
-                            y_min, y_max = int(min(y_coords)), int(max(y_coords))
-
-                            # Draw the rectangle on the image
-                            cv2.rectangle(annotated_image, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
+                        # draw smallest rotated rectangle that fits each mask
+                        for mask in getattr(result, "masks", []).xy if getattr(result, "masks", None) else []:
+                            points = np.array(mask, dtype=np.float32)
+                            if points.size == 0 or len(points) < 3:
+                                continue
+                            try:
+                                rect = cv2.minAreaRect(points)
+                                box = cv2.boxPoints(rect)
+                                if box is None or box.size == 0:
+                                    continue
+                                if np.isnan(box).any():
+                                    continue
+                                if cv2.contourArea(box) <= 0:
+                                    continue
+                                box = np.int32(box)
+                                cv2.drawContours(annotated_image, [box], 0, (0, 255, 0), 2)
+                            except Exception:
+                                # on any error skip this mask
+                                continue
 
                     # Convert the annotated image back to PIL format
                     annotated_image_pil = Image.fromarray(cv2.cvtColor(annotated_image, cv2.COLOR_BGR2RGB))
