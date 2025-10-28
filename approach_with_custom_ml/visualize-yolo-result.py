@@ -1,6 +1,8 @@
 import cv2
 from pathlib import Path
 from ultralytics import YOLO  # Assuming you are using the ultralytics YOLO library
+import numpy as np
+import logging
 
 def visualize_yolo_results(model_path, input_folder, draw_rect=False):
     """
@@ -31,16 +33,40 @@ def visualize_yolo_results(model_path, input_folder, draw_rect=False):
 
             for result in results:
                 if draw_rect:
-                    # Draw the smallest rectangle around each mask
-                    for mask in result.masks.xy:
-                        # Calculate the bounding box of the mask
-                        x_coords = [x for x, y in mask]
-                        y_coords = [y for x, y in mask]
-                        x_min, x_max = int(min(x_coords)), int(max(x_coords))
-                        y_min, y_max = int(min(y_coords)), int(max(y_coords))
+                    # Draw the smallest rotated rectangle around each mask
+                    for mask in getattr(result, "masks", []).xy if getattr(result, "masks", None) else []:
+                        # Convert mask points to a NumPy array
+                        points = np.array(mask, dtype=np.float32)
 
-                        # Draw the rectangle on the image
-                        cv2.rectangle(image, (x_min, y_min), (x_max, y_max), (0, 255, 0), 10)
+                        # Validate points
+                        if points.size == 0 or len(points) < 3:
+                            logging.warning(f"Skipping mask with insufficient points (len={len(points)}) for image {img_file.name}")
+                            continue
+
+                        try:
+                            # Calculate the minimum area rectangle
+                            rotated_rect = cv2.minAreaRect(points)
+                            box = cv2.boxPoints(rotated_rect)  # Get the 4 corner points of the rectangle
+
+                            if box is None or box.size == 0:
+                                logging.warning(f"boxPoints returned empty for image {img_file.name}")
+                                continue
+
+                            if np.isnan(box).any():
+                                logging.warning(f"box contains NaN for image {img_file.name}")
+                                continue
+
+                            # Ensure the rectangle has positive area
+                            if cv2.contourArea(box) <= 0:
+                                logging.warning(f"Generated box has zero area for image {img_file.name}")
+                                continue
+
+                            box = np.int32(box)  # Convert to integer coordinates
+
+                            # Draw the rotated rectangle on the image
+                            cv2.drawContours(image, [box], 0, (0, 255, 0), 2)
+                        except Exception as e:
+                            logging.exception(f"Failed to compute/draw rotated rect for image {img_file.name}: {e}")
                 else:
                     # Draw the masks and bounding boxes
                     annotated_frame = result.plot()
@@ -69,6 +95,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    model = 'training-runs/combination-with-synthetic-v2/epoch80.pt'
+    model = 'training-runs/combination-with-synthetic-v2/photo_segmentation/weights/best.pt'
 
     visualize_yolo_results(model, args.input, draw_rect=args.rect)
