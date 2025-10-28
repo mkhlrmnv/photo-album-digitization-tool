@@ -6,6 +6,7 @@ from PIL import Image
 import cv2
 import numpy as np
 import time
+import shutil
 
 try:
     from ultralytics import YOLO
@@ -19,7 +20,7 @@ logging.basicConfig(
     handlers=[logging.StreamHandler()]  # Log to console
 )
 
-YOLO_MODEL = '../approach_with_custom_ml/training-runs/combination-with-synthetic-v2/epoch80.pt'
+YOLO_MODEL = '../approach_with_custom_ml/training-runs/combination-with-synthetic-v2/photo_segmentation/weights/best.pt'
 
 
 class State(rx.State):
@@ -162,6 +163,18 @@ class State(rx.State):
             total_images = len(self.extracted_images)
             upload_dir = rx.get_upload_dir()
             upload_dir.mkdir(parents=True, exist_ok=True)
+
+            logging.info(f"Clearing upload directory: {upload_dir}")
+            for p in upload_dir.iterdir():
+                try:
+                    if p.is_file() or p.is_symlink():
+                        p.unlink()
+                    elif p.is_dir():
+                        shutil.rmtree(p)
+                except Exception as e:
+                    logging.exception(f"Failed to remove {p}: {e}")
+
+
             processed_zip_buffer = io.BytesIO()
             with zipfile.ZipFile(
                 processed_zip_buffer, "a", zipfile.ZIP_DEFLATED, False
