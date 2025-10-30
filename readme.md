@@ -3,6 +3,17 @@
 ## **Core Idea**
 The **Kuva-Prosessointi** project is a comprehensive platform for processing scanned photo album pages. It combines a web-based interface for user interaction with machine learning models for image segmentation and classification. The platform allows users to upload large images, crop individual photos, and process them using advanced machine learning techniques. Additionally, it provides tools for generating synthetic datasets, splitting datasets, and training models for two distinct tasks: **segmentation** and **classification**.
 
+### Example of the UI
+<a href="examples/sample-photo.jpg">
+    <img src="./examples/Screenshot 2025-10-30 at 20.36.09.png" alt="Sample scanned photo" style="max-width:500px; width:100%; height:auto; display:block;" />
+</a>
+
+
+### Usage example
+<a href="web-interface/static/demo.gif">
+    <img src="./examples/Screen%20Recording%202025-10-30%20at%2020.30.02.gif" alt="Demo: Photo Album Digitization (small)" style="max-width:500px; width:100%; height:auto; display:block;" />
+</a>
+
 ---
 
 ## **Project Structure**
