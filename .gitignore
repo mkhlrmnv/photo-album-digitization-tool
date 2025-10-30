@@ -210,11 +210,9 @@ output/
 *.pt
 *.pth
 
-*.jpeg
-*.jpg
-*.png
 *.csv
-*.txt
 *.yaml
 *.cache
 *.zip
+
+datasets/
