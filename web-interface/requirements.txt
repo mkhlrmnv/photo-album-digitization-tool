@@ -1,0 +1,7 @@
+
+reflex==0.8.17a1
+pillow
+opencv-python-headless
+numpy
+opencv-python
+ultralytics
