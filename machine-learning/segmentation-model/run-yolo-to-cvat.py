@@ -99,6 +99,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    model = 'training-runs/combination-with-synthetic/segment/photo_segmentation/weights/best.pt'
+    model = 'models/combination-with-synthetic-v2.pt'
 
     run_yolo_and_save_cvat(model, args.input, args.output)

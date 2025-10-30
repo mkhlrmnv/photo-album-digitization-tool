@@ -21,7 +21,7 @@ logging.basicConfig(
     handlers=[logging.StreamHandler()]  # Log to console
 )
 
-YOLO_MODEL = '../approach_with_custom_ml/training-runs/combination-with-synthetic-v2/photo_segmentation/weights/best.pt'
+YOLO_MODEL = '../machine-learning/segmentation-model/models/combination-with-synthetic-v2.pt'
 
 
 class State(rx.State):
