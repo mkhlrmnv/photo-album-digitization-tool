@@ -7,6 +7,7 @@ import cv2
 import numpy as np
 import time
 import shutil
+from pathlib import Path
 
 try:
     from ultralytics import YOLO
@@ -174,7 +175,6 @@ class State(rx.State):
                 except Exception as e:
                     logging.exception(f"Failed to remove {p}: {e}")
 
-
             processed_zip_buffer = io.BytesIO()
             with zipfile.ZipFile(
                 processed_zip_buffer, "a", zipfile.ZIP_DEFLATED, False
@@ -189,45 +189,78 @@ class State(rx.State):
                     # Run YOLO model on the image
                     results = model(pil_image, verbose=False)
 
-                    # Create a new image to draw rectangles
-                    annotated_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+                    # Create a BGR image for processing / cropping
+                    base_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+
+                    # collect crops for this image
+                    crops = []
+                    crop_idx = 0
 
                     for result in results:
-                        # draw smallest rotated rectangle that fits each mask
+                        # iterate masks (if present) and create smallest rotated rect crops
                         for mask in getattr(result, "masks", []).xy if getattr(result, "masks", None) else []:
                             points = np.array(mask, dtype=np.float32)
                             if points.size == 0 or len(points) < 3:
                                 continue
                             try:
-                                rect = cv2.minAreaRect(points)
-                                box = cv2.boxPoints(rect)
-                                if box is None or box.size == 0:
+                                rect = cv2.minAreaRect(points)  # ((cx,cy),(w,h),angle)
+                                (cx, cy), (w, h), angle = rect
+                                # skip degenerate
+                                if w <= 0 or h <= 0:
                                     continue
-                                if np.isnan(box).any():
+                                # ensure width >= height for consistent rotation handling
+                                if w < h:
+                                    angle += 90
+                                    w, h = h, w
+                                # rotation matrix around center
+                                M = cv2.getRotationMatrix2D((cx, cy), angle, 1.0)
+                                # rotate whole image
+                                rotated = cv2.warpAffine(base_image, M, (img_width, img_height), flags=cv2.INTER_CUBIC)
+                                # compute crop coords
+                                x = int(round(cx - w / 2.0))
+                                y = int(round(cy - h / 2.0))
+                                w_i = int(round(w))
+                                h_i = int(round(h))
+                                # clamp to image bounds
+                                x = max(0, x)
+                                y = max(0, y)
+                                if x + w_i > img_width:
+                                    w_i = img_width - x
+                                if y + h_i > img_height:
+                                    h_i = img_height - y
+                                if w_i <= 0 or h_i <= 0:
                                     continue
-                                if cv2.contourArea(box) <= 0:
+                                crop = rotated[y:y + h_i, x:x + w_i]
+                                if crop.size == 0:
                                     continue
-                                box = np.int32(box)
-                                cv2.drawContours(annotated_image, [box], 0, (0, 255, 0), 2)
+                                # convert crop to JPEG bytes
+                                crop_pil = Image.fromarray(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB))
+                                buf = io.BytesIO()
+                                crop_pil.save(buf, format="JPEG")
+                                crop_bytes = buf.getvalue()
+                                crop_name = f"{Path(image_name).stem}_crop_{crop_idx}.jpg"
+                                crops.append((crop_name, crop_bytes))
+                                # also save to upload_dir so UI can reference it
+                                processed_filepath = upload_dir / crop_name
+                                with open(processed_filepath, "wb") as pf:
+                                    pf.write(crop_bytes)
+                                self.processed_images.append((image_name, crop_name))
+                                self.processed_images_count += 1
+                                crop_idx += 1
                             except Exception:
-                                # on any error skip this mask
+                                # skip this mask on any issue
                                 continue
 
-                    # Convert the annotated image back to PIL format
-                    annotated_image_pil = Image.fromarray(cv2.cvtColor(annotated_image, cv2.COLOR_BGR2RGB))
-                    img_byte_arr = io.BytesIO()
-                    annotated_image_pil.save(img_byte_arr, format="JPEG")
-                    processed_image_bytes = img_byte_arr.getvalue()
+                    # write all crops for this image into the zip (if none, skip)
+                    for cname, cbytes in crops:
+                        zf.writestr(cname, cbytes)
 
-                    # Save the processed image
-                    processed_filename = f"processed_{image_name}"
-                    processed_filepath = upload_dir / processed_filename
-                    with open(processed_filepath, "wb") as f:
-                        f.write(processed_image_bytes)
-                    self.processed_images.append((image_name, processed_filename))
-                    zf.writestr(image_name, processed_image_bytes)
-                    self.processed_images_count += 1
-                    self.total_objects_detected += len(results[0].boxes)
+                    # update objects detected: count masks across all results
+                    masks_count = 0
+                    for result in results:
+                        masks_count += len(getattr(result, "masks", []).xy) if getattr(result, "masks", None) else 0
+                    self.total_objects_detected += masks_count
+
                     yield
             self.processing_progress = 100
             self.processing_status = f"Processing complete. Found {self.total_objects_detected} objects."
