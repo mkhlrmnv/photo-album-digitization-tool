@@ -5,7 +5,7 @@ The **Kuva-Prosessointi** project is a comprehensive platform for processing sca
 
 ### Example of the UI
 <a href="examples/sample-photo.jpg">
-    <img src="./examples/Screenshot 2025-10-30 at 20.36.09.png" alt="Sample scanned photo" style="max-width:500px; width:100%; height:auto; display:block;" />
+    <img src="./examples/Screenshot 2025-10-31 at 15.24.33.png" alt="Sample scanned photo" style="max-width:500px; width:100%; height:auto; display:block;" />
 </a>
 
 
