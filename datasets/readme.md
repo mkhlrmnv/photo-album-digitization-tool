@@ -14,7 +14,7 @@ This folder contains all the datasets used for training and testing the machine 
 
 ## Datasets used in project
 
-You can access all the dataset used in this project [here](https://drive.google.com/file/d/1dwrSB5XBRvikQjqey8aaM_qy_I1aQptN/view?usp=share_link)
+You can access all the dataset used in this project [here](https://drive.google.com/file/d/1u4P-gXudEpjpQcIh559YQul4N5iyYNkw/view?usp=sharing)
 
 ### Sctructure of zipped folder
 ```
