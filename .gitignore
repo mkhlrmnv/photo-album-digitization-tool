@@ -215,5 +215,5 @@ output/
 *.cache
 *.zip
 
-datasets/
+datasets/*/
 uploaded_files/
