@@ -289,6 +289,7 @@ class State(rx.State):
                     for crop_name, crop_bytes, rotation_label in labeled_crops:
                         labeled_name = f"{Path(crop_name).stem}_rot_{rotation_label}.jpg"
                         
+                        self.processed_images.append((labeled_name, labeled_name))
                         processed_filepath = upload_dir / labeled_name
                         with open(processed_filepath, "wb") as pf:
                             pf.write(crop_bytes)
