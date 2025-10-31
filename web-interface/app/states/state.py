@@ -21,7 +21,8 @@ logging.basicConfig(
     handlers=[logging.StreamHandler()]  # Log to console
 )
 
-YOLO_MODEL = '../machine-learning/segmentation-model/models/combination-with-synthetic-v2.pt'
+SEGMENTATION_MODEL = '../machine-learning/segmentation-model/models/combination-with-synthetic-v2.pt'
+CLASSIFICATION_MODEL = '../machine-learning/classification-model/models/first-version.pt'
 
 
 class State(rx.State):
@@ -138,28 +139,120 @@ class State(rx.State):
         self.total_objects_detected = 0
         self.processed_images = []
 
+    def process_with_segmentation_model(self, model, image_name, image_data, upload_dir):
+        """Process an image with the segmentation model to extract crops."""
+        pil_image = Image.open(io.BytesIO(image_data)).convert("RGB")
+        img_width, img_height = pil_image.size
+
+        # Run YOLO segmentation model on the image
+        results = model(pil_image, verbose=False)
+
+        # Create a BGR image for processing / cropping
+        base_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+
+        # Collect crops for this image
+        crops = []
+        crop_idx = 0
+
+        for result in results:
+            # Iterate masks (if present) and create smallest rotated rect crops
+            for mask in getattr(result, "masks", []).xy if getattr(result, "masks", None) else []:
+                points = np.array(mask, dtype=np.float32)
+                if points.size == 0 or len(points) < 3:
+                    continue
+                try:
+                    rect = cv2.minAreaRect(points)  # ((cx,cy),(w,h),angle)
+                    (cx, cy), (w, h), angle = rect
+                    if w <= 0 or h <= 0:
+                        continue
+                    if w < h:
+                        angle += 90
+                        w, h = h, w
+                    M = cv2.getRotationMatrix2D((cx, cy), angle, 1.0)
+                    rotated = cv2.warpAffine(base_image, M, (img_width, img_height), flags=cv2.INTER_CUBIC)
+                    x = int(round(cx - w / 2.0))
+                    y = int(round(cy - h / 2.0))
+                    w_i = int(round(w))
+                    h_i = int(round(h))
+                    x = max(0, x)
+                    y = max(0, y)
+                    if x + w_i > img_width:
+                        w_i = img_width - x
+                    if y + h_i > img_height:
+                        h_i = img_height - y
+                    if w_i <= 0 or h_i <= 0:
+                        continue
+                    crop = rotated[y:y + h_i, x:x + w_i]
+                    if crop.size == 0:
+                        continue
+                    crop_pil = Image.fromarray(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB))
+                    buf = io.BytesIO()
+                    crop_pil.save(buf, format="JPEG")
+                    crop_bytes = buf.getvalue()
+                    crop_name = f"{Path(image_name).stem}_crop_{crop_idx}.jpg"
+                    crops.append((crop_name, crop_bytes))
+                    crop_idx += 1
+                except Exception:
+                    continue
+
+        return crops, results
+
+    def process_with_classification_model(self, model, crops):
+        """Process cropped images with the classification model to determine rotation and apply it."""
+        labeled_crops = []
+        for crop_name, crop_bytes in crops:
+            try:
+                crop_image = Image.open(io.BytesIO(crop_bytes)).convert("RGB")
+                results = model(crop_image, verbose=False)
+                if results and len(results) > 0:
+                    rotation_label = results[0].names[results[0].probs.top1]
+                    rotation_angle = int(rotation_label)  # Convert label to integer angle
+                else:
+                    rotation_label = "Unknown"
+                    rotation_angle = 0  # Default to no rotation if unknown
+
+                # Rotate the image based on the classification result
+                rotated_image = crop_image.rotate(-rotation_angle, expand=True)  # Rotate counterclockwise
+
+                # Save the rotated image to bytes
+                buf = io.BytesIO()
+                rotated_image.save(buf, format="JPEG")
+                rotated_bytes = buf.getvalue()
+
+                labeled_crops.append((crop_name, rotated_bytes, rotation_label))
+            except Exception as e:
+                logging.exception(f"Error processing crop {crop_name}: {e}")
+                labeled_crops.append((crop_name, crop_bytes, "Error"))
+        return labeled_crops
+
     @rx.event
     def process_images(self):
-        """Process extracted images with YOLO model."""
+        """Process extracted images with YOLO segmentation and classification models."""
         logging.info("Starting image processing.")
         if not self.extracted_images:
             logging.warning("No images to process.")
             return
         self.is_processing = True
-        self.processing_status = "Loading YOLO model..."
+        self.processing_status = "Loading models..."
         self.processed_images = []
         self.processed_images_count = 0
         self.total_objects_detected = 0
         yield
         try:
-            model = YOLO(YOLO_MODEL)
-            logging.info("YOLO model loaded successfully.")
-        except NameError:
-            logging.error("YOLO model could not be loaded.")
-            self.processing_status = "Error: YOLO model could not be loaded. Please check installation."
+            # Load YOLO segmentation model
+            segmentation_model = YOLO(SEGMENTATION_MODEL)
+            logging.info("Segmentation model loaded successfully.")
+
+            # Load classification model
+            classification_model = YOLO(CLASSIFICATION_MODEL)
+            logging.info("Classification model loaded successfully.")
+        except Exception as e:
+            logging.error(f"Error loading models: {e}")
+            self.processing_status = "Error: Models could not be loaded. Please check installation."
             self.is_processing = False
             yield
             return
+
         try:
             total_images = len(self.extracted_images)
             upload_dir = rx.get_upload_dir()
@@ -183,82 +276,30 @@ class State(rx.State):
                     self.processing_status = f"Processing image {i + 1}/{total_images}..."
                     logging.info(f"Processing image {i + 1}/{total_images}: {image_name}")
                     self.processing_progress = int((i + 1) / total_images * 100)
-                    pil_image = Image.open(io.BytesIO(image_data)).convert("RGB")
-                    img_width, img_height = pil_image.size
 
-                    # Run YOLO model on the image
-                    results = model(pil_image, verbose=False)
+                    # Process with segmentation model
+                    crops, results = self.process_with_segmentation_model(
+                        segmentation_model, image_name, image_data, upload_dir
+                    )
 
-                    # Create a BGR image for processing / cropping
-                    base_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+                    # Process with classification model
+                    labeled_crops = self.process_with_classification_model(classification_model, crops)
 
-                    # collect crops for this image
-                    crops = []
-                    crop_idx = 0
+                    # Write labeled crops to the zip file
+                    for crop_name, crop_bytes, rotation_label in labeled_crops:
+                        labeled_name = f"{Path(crop_name).stem}_rot_{rotation_label}.jpg"
+                        
+                        processed_filepath = upload_dir / labeled_name
+                        with open(processed_filepath, "wb") as pf:
+                            pf.write(crop_bytes)
+                        
+                        zf.writestr(labeled_name, crop_bytes)
 
-                    for result in results:
-                        # iterate masks (if present) and create smallest rotated rect crops
-                        for mask in getattr(result, "masks", []).xy if getattr(result, "masks", None) else []:
-                            points = np.array(mask, dtype=np.float32)
-                            if points.size == 0 or len(points) < 3:
-                                continue
-                            try:
-                                rect = cv2.minAreaRect(points)  # ((cx,cy),(w,h),angle)
-                                (cx, cy), (w, h), angle = rect
-                                # skip degenerate
-                                if w <= 0 or h <= 0:
-                                    continue
-                                # ensure width >= height for consistent rotation handling
-                                if w < h:
-                                    angle += 90
-                                    w, h = h, w
-                                # rotation matrix around center
-                                M = cv2.getRotationMatrix2D((cx, cy), angle, 1.0)
-                                # rotate whole image
-                                rotated = cv2.warpAffine(base_image, M, (img_width, img_height), flags=cv2.INTER_CUBIC)
-                                # compute crop coords
-                                x = int(round(cx - w / 2.0))
-                                y = int(round(cy - h / 2.0))
-                                w_i = int(round(w))
-                                h_i = int(round(h))
-                                # clamp to image bounds
-                                x = max(0, x)
-                                y = max(0, y)
-                                if x + w_i > img_width:
-                                    w_i = img_width - x
-                                if y + h_i > img_height:
-                                    h_i = img_height - y
-                                if w_i <= 0 or h_i <= 0:
-                                    continue
-                                crop = rotated[y:y + h_i, x:x + w_i]
-                                if crop.size == 0:
-                                    continue
-                                # convert crop to JPEG bytes
-                                crop_pil = Image.fromarray(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB))
-                                buf = io.BytesIO()
-                                crop_pil.save(buf, format="JPEG")
-                                crop_bytes = buf.getvalue()
-                                crop_name = f"{Path(image_name).stem}_crop_{crop_idx}.jpg"
-                                crops.append((crop_name, crop_bytes))
-                                # also save to upload_dir so UI can reference it
-                                processed_filepath = upload_dir / crop_name
-                                with open(processed_filepath, "wb") as pf:
-                                    pf.write(crop_bytes)
-                                self.processed_images.append((image_name, crop_name))
-                                self.processed_images_count += 1
-                                crop_idx += 1
-                            except Exception:
-                                # skip this mask on any issue
-                                continue
-
-                    # write all crops for this image into the zip (if none, skip)
-                    for cname, cbytes in crops:
-                        zf.writestr(cname, cbytes)
-
-                    # update objects detected: count masks across all results
-                    masks_count = 0
-                    for result in results:
-                        masks_count += len(getattr(result, "masks", []).xy) if getattr(result, "masks", None) else 0
+                    # Update objects detected
+                    masks_count = sum(
+                        len(getattr(result, "masks", []).xy) if getattr(result, "masks", None) else 0
+                        for result in results
+                    )
                     self.total_objects_detected += masks_count
 
                     yield
