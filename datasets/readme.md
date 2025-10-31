@@ -5,10 +5,12 @@ This folder contains all the datasets used for training and testing the machine 
 ---
 
 ## **Folder Structure**
+```
 ├── you-dataset1/       # downloaded or your own datasets
 ├── you-dataset2/
 ├── ...
 └── README.md           # You are here
+```
 
 ---
 
