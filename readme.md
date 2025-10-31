@@ -24,9 +24,9 @@ kuva-prosessointi/
 ├── web-interface/                      # Web application for user interaction
 │ ├── app/                              # Application logic and components
 │ │ ├── app.py                          # Main app components (UI logic)
-│ │ └── states/                         # Application state management
-│ │ └── state.py                        # Handles uploads, processing, and results
-│ │
+│ │ ├── states/                         # Application state management
+│ │ │  └── state.py                      # Handles uploads, processing, and results
+│ │ │
 │ ├── rxconfig.py                       # Reflex configuration
 │ ├── static/                           # Static assets (CSS, JS, images)
 │ └── templates/                        # HTML templates (if applicable)
