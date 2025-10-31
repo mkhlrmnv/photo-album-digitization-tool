@@ -1,4 +1,4 @@
-# # Datasets
+## Datasets
 
 This folder contains all the datasets used for training and testing the machine learning models. The datasets are organized into subdirectories for raw, processed, and synthetic datasets. These datasets are used for both segmentation and classification tasks.
 
