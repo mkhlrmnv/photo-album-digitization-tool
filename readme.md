@@ -45,7 +45,6 @@ kuva-prosessointi/
 │ │ ├── dataset-split.py                # Split datasets into train/val/test
 │ │ ├── train.py                        # Train classification models
 │ │ └── README.md                       # TODO
-│ └── README.md                         # TODO
 │ 
 ├── datasets/                           # Datasets for training and testing
 │ └── README.md                         # TODO
