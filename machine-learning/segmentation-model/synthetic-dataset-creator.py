@@ -7,10 +7,10 @@ Req: pip install pillow numpy tqdm
 
 Examples:
   # standard layout (images/, labels/, dataset yaml)
-  python synth_rect_album.py --src /path/to/photos --out ./data --n 500
+  python synthetic-dataset-creator.py --src /path/to/photos --out ./data --n 500
 
   # CVAT-ready layout (images/train, labels/train, train.txt, data.yaml)
-  python synth_rect_album.py --src /path/to/photos --out ./data --n 500 --cvat-ready
+  python synthetic-dataset-creator.py --src /path/to/photos --out ./data --n 500 --cvat-ready
 """
 
 import argparse
