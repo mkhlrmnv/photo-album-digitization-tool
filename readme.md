@@ -1,7 +1,7 @@
 # Photo Album Digitization Tool: Image Processing and Machine Learning Platform
 
 ## **Core Idea**
-The **Kuva-Prosessointi** project is a comprehensive platform for processing scanned photo album pages. It combines a web-based interface for user interaction with machine learning models for image segmentation and classification. The platform allows users to upload large images, crop individual photos, and process them using advanced machine learning techniques. Additionally, it provides tools for generating synthetic datasets, splitting datasets, and training models for two distinct tasks: **segmentation** and **classification**.
+The **Photo Album Digitization Tool** project is a comprehensive platform for processing scanned photo album pages. It combines a web-based interface for user interaction with machine learning models for image segmentation and classification. The platform allows users to upload large images, crop individual photos, and process them using advanced machine learning techniques. Additionally, it provides tools for generating synthetic datasets, splitting datasets, and training models for two distinct tasks: **segmentation** and **classification**.
 
 ### Example of the UI
 <a href="examples/sample-photo.jpg">
